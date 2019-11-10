@@ -120,6 +120,7 @@ public class Controller {
             vBoxKeys.setLayoutY(100);
             root.getChildren().add(vBoxKeys);
         }
+        if (!vBoxKeys.isVisible()) vBoxKeys.setVisible(true);
     }
 
     public interface Keys {
