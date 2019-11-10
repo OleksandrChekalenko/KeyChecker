@@ -2,6 +2,8 @@ package controllers;
 
 import javafx.scene.Group;
 import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
 import sample.Data;
 
@@ -13,11 +15,54 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class Controller {
+    private Text failedKeysLabel = new Text();
 
     private Group root;
+    private VBox vBoxKeys = new VBox();
 
     public Controller(Group root) {
         this.root = root;
+    }
+
+    private void saveTxt() {
+        File folder = new File(Data.path);
+        File[] listOfFiles = folder.listFiles();
+        if (listOfFiles == null) {
+            return;
+        }
+
+//        if (checkKeys(listOfFiles)){
+        ArrayList<String> listOfKeys = getListOfKeys(folder);
+
+        int countKeys = 0;
+        int uncorrectKeys = 0;
+        try (FileWriter writer = new FileWriter(Data.path + "\\" + Keys.KEYS_FILE_NAME, false)) {
+            for (String key : listOfKeys) {
+                if (key.contains("1") || key.contains("O")) {
+                    JOptionPane.showMessageDialog(new JFrame(), key + "\n Ключ містить недопустимі символи!",
+                            " ", JOptionPane.ERROR_MESSAGE);
+                    uncorrectKeys++;
+                    key = checkForbiddenCharacters(key);
+                }
+
+                writer.write(key);
+                writer.append('\n');
+                countKeys++;
+                System.out.println(key);
+            }
+            writer.flush();
+            if (uncorrectKeys == 0 && vBoxKeys.isVisible()) vBoxKeys.setVisible(false);
+            JOptionPane.showMessageDialog(new JFrame(), "Створено файл: " + Keys.KEYS_FILE_NAME +
+                            "\n Шлях до файлу: " + Data.path +
+                            "\\" + Keys.KEYS_FILE_NAME +
+                            "\n Загальна кількість ключів: " + countKeys +
+                            "\n Неправильна кількість ключів: " + uncorrectKeys,
+                    " ", JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+//        }
     }
 
     public void creatingBtn() {
@@ -56,33 +101,33 @@ public class Controller {
         }
     }
 
-    private void saveTxt() {
-        File folder = new File(Data.path);
-        File[] listOfFiles = folder.listFiles();
-        if (listOfFiles == null) {
-            return;
-        }
+    @NotNull
+    private String checkForbiddenCharacters(String key) {
+        if (key.contains("1"))
+            key += " !!!!!!! ключ містить символ \"1\"";
+        if (key.contains("O"))
+            key += " !!!!!!! ключ містить символ \"O\"";
+        createFailedKeys();
 
-//        if (checkKeys(listOfFiles)){
-        ArrayList<String> listOfKeys = getListOfKeys(folder);
-        int countKeys = 0;
-        try (FileWriter writer = new FileWriter(Data.path + "\\" + Keys.KEYS_FILE_NAME, false)) {
-            for (String file : listOfKeys) {
-                writer.write(file);
-                writer.append('\n');
-                countKeys++;
-                System.out.println(file);
-            }
-            writer.flush();
-            JOptionPane.showMessageDialog(new JFrame(), "Створено файл: " + Keys.KEYS_FILE_NAME +
-                            "\n Шлях до файлу: " + Data.path +
-                            "\\" + Keys.KEYS_FILE_NAME +
-                            "\n Кількість ключів: " + countKeys,
-                    " ", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
+        return key;
+    }
+
+    private void createFailedKeys() {
+        failedKeysLabel.setText(Keys.FAILED_KEY_TEXT + "\n" + Data.path);
+        if (vBoxKeys.getChildren().size() == 0) {
+            vBoxKeys.getChildren().add(failedKeysLabel);
+            vBoxKeys.setLayoutX(150);
+            vBoxKeys.setLayoutY(100);
+            root.getChildren().add(vBoxKeys);
         }
-//        }
+    }
+
+    public interface Keys {
+        String KEYS_FILE_NAME = "keys.txt";
+        String JPG_FORMAT = ".jpg";
+        int KEY_LENGH = 24;
+        int MIN_KEY_LENGH = 17;
+        String FAILED_KEY_TEXT = "Деякі з ключів містять заборонені символи \"1\" та \"O\"";
     }
 
     private ArrayList<String> getListOfKeys(File folder) {
@@ -128,12 +173,5 @@ public class Controller {
             return false;
         }
         return true;
-    }
-
-    public interface Keys {
-        String KEYS_FILE_NAME = "keys.txt";
-        String JPG_FORMAT = ".jpg";
-        int KEY_LENGH = 24;
-        int MIN_KEY_LENGH = 17;
     }
 }
