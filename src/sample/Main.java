@@ -24,7 +24,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-
+        mainSceneController.init();
         mainSceneController.creatingBtn();
 
         Scene scene = new Scene(root, 600, 300);

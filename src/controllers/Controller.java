@@ -2,6 +2,7 @@ package controllers;
 
 import javafx.scene.Group;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import org.jetbrains.annotations.NotNull;
@@ -15,13 +16,27 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class Controller {
-    private Text failedKeysLabel = new Text();
-
     private Group root;
-    private VBox vBoxKeys = new VBox();
+
+    private VBox failedKeysBox = new VBox();
+    private Text failedKeysLabel = new Text();
+    private Text enterKeyLength = new Text("   Введіть довжину ключа");
+    private TextField keyLengthTF = new TextField();
+
+    private VBox keyLengthBox = new VBox(10);
+    private int keyLength = 0;
 
     public Controller(Group root) {
         this.root = root;
+    }
+
+    public void init() {
+        keyLengthBox.getChildren().add(enterKeyLength);
+        keyLengthBox.getChildren().add(keyLengthTF);
+        keyLengthBox.setLayoutX(225);
+        keyLengthBox.setLayoutY(100);
+
+        root.getChildren().add(keyLengthBox);
     }
 
     private void saveTxt() {
@@ -39,11 +54,13 @@ public class Controller {
         try (FileWriter writer = new FileWriter(Data.path + "\\" + Keys.KEYS_FILE_NAME, false)) {
             for (String key : listOfKeys) {
                 if (key.contains("1") || key.contains("O")) {
-                    JOptionPane.showMessageDialog(new JFrame(), key + "\n Ключ містить недопустимі символи!",
+                    JOptionPane.showMessageDialog(new JFrame(), key + "\n Ключ містить недопустимі символ!",
                             " ", JOptionPane.ERROR_MESSAGE);
-                    uncorrectKeys++;
-                    key = checkForbiddenCharacters(key);
+                    ++uncorrectKeys;
                 }
+                if (key.length() != keyLength && !(key.contains("1") || key.contains("O")))
+                    ++uncorrectKeys;
+                key = checkForbiddenCharacters(key);
 
                 writer.write(key);
                 writer.append('\n');
@@ -51,7 +68,7 @@ public class Controller {
                 System.out.println(key);
             }
             writer.flush();
-            if (uncorrectKeys == 0 && vBoxKeys.isVisible()) vBoxKeys.setVisible(false);
+            if (uncorrectKeys == 0 && failedKeysBox.isVisible()) failedKeysBox.setVisible(false);
             JOptionPane.showMessageDialog(new JFrame(), "Створено файл: " + Keys.KEYS_FILE_NAME +
                             "\n Шлях до файлу: " + Data.path +
                             "\\" + Keys.KEYS_FILE_NAME +
@@ -71,10 +88,30 @@ public class Controller {
         button.setLayoutY(200);
         button.setPrefSize(100, 30);
         button.setOnAction(event -> {
-            choseButton();
-            saveTxt();
+            setKeyLength();
+            if (isKeyZero())
+                errorLengthMessage();
+            else {
+                choseButton();
+                saveTxt();
+            }
         });
         this.root.getChildren().add(button);
+    }
+
+    private void setKeyLength() {
+        if (keyLengthTF.getText().equals("") || keyLengthTF.getText().matches("\\w+\\s+"))
+            keyLength = 0;
+        else
+            keyLength = Integer.parseInt(keyLengthTF.getText());
+    }
+
+    private boolean isKeyZero() {
+        return keyLength == 0;
+    }
+
+    private void errorLengthMessage() {
+        JOptionPane.showMessageDialog(new JFrame(), "Ви не ввели довжину ключа", "Dialog", JOptionPane.ERROR_MESSAGE);
     }
 
     private void choseButton() {
@@ -88,16 +125,17 @@ public class Controller {
             System.out.println("getCurrentDirectory(): " + chooser.getCurrentDirectory());
             Data.path = chooser.getSelectedFile().getAbsolutePath();
         } else {
-            String message = "Помилка, шлях не отриманий";
-            JOptionPane.showMessageDialog(new JFrame(), message, "Dialog", JOptionPane.ERROR_MESSAGE);
+            Data.path = "";
+            /*String message = "Помилка, шлях не отриманий";
+            JOptionPane.showMessageDialog(new JFrame(), message, "Dialog", JOptionPane.ERROR_MESSAGE);*/
         }
         if (!Data.path.equals("")) {
             String message = "Шлях до ключів: " + Data.path;
             JOptionPane.showMessageDialog(new JFrame(), message, "Dialog", JOptionPane.INFORMATION_MESSAGE);
-        } else {
+        } else {/*
             String message = "Вкажіть папку";
             JOptionPane.showMessageDialog(new JFrame(), message, "Dialog",
-                    JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE);*/
         }
     }
 
@@ -108,19 +146,21 @@ public class Controller {
         if (key.contains("O"))
             key += " !!!!!!! ключ містить символ \"O\"";
         createFailedKeys();
+        if (key.length() != keyLength)
+            key += "!!!!!!! Невірна довжина ключа! " + key.length() + " замість " + keyLength;
 
         return key;
     }
 
     private void createFailedKeys() {
         failedKeysLabel.setText(Keys.FAILED_KEY_TEXT + "\n" + Data.path);
-        if (vBoxKeys.getChildren().size() == 0) {
-            vBoxKeys.getChildren().add(failedKeysLabel);
-            vBoxKeys.setLayoutX(150);
-            vBoxKeys.setLayoutY(100);
-            root.getChildren().add(vBoxKeys);
+        if (failedKeysBox.getChildren().size() == 0) {
+            failedKeysBox.getChildren().add(failedKeysLabel);
+            failedKeysBox.setLayoutX(150);
+            failedKeysBox.setLayoutY(100);
+            root.getChildren().add(failedKeysBox);
         }
-        if (!vBoxKeys.isVisible()) vBoxKeys.setVisible(true);
+        if (!failedKeysBox.isVisible()) failedKeysBox.setVisible(true);
     }
 
     public interface Keys {
