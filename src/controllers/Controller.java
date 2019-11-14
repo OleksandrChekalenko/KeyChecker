@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import sample.Data;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,14 +17,32 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 public class Controller {
-    private Group root;
+    public void creatingBtn() {
+        Button button = new Button("Path");
+        button.setLayoutX(250);
+        button.setLayoutY(200);
+        button.setPrefSize(100, 30);
+        button.setOnAction(event -> {
+            setKeyLength();
+            if (isKeyZero())
+                errorLengthMessage();
+            else {
+                choseButton();
+                saveTxt();
+                openKeysFile();
+            }
+        });
+        this.root.getChildren().add(button);
+    }
 
+    private Group root;
     private VBox failedKeysBox = new VBox();
     private Text failedKeysLabel = new Text();
     private Text enterKeyLength = new Text("   Введіть довжину ключа");
-    private TextField keyLengthTF = new TextField();
 
+    private TextField keyLengthTF = new TextField();
     private VBox keyLengthBox = new VBox(10);
+
     private int keyLength = 0;
 
     public Controller(Group root) {
@@ -82,21 +101,27 @@ public class Controller {
 //        }
     }
 
-    public void creatingBtn() {
-        Button button = new Button("Path");
-        button.setLayoutX(250);
-        button.setLayoutY(200);
-        button.setPrefSize(100, 30);
-        button.setOnAction(event -> {
-            setKeyLength();
-            if (isKeyZero())
-                errorLengthMessage();
-            else {
-                choseButton();
-                saveTxt();
+    private void openKeysFile() {
+        try {
+            if (!Data.path.equals("")) {
+                Desktop.getDesktop().open(new File(Data.path + "\\" + Keys.KEYS_FILE_NAME));
             }
-        });
-        this.root.getChildren().add(button);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @NotNull
+    private String checkForbiddenCharacters(String key) {
+        if (key.length() != keyLength)
+            key += " !!!!!!! Невірна довжина ключа! " + key.length() + " замість " + keyLength;
+        if (key.contains("1"))
+            key += " !!!!!!! ключ містить символ \"1\"";
+        if (key.contains("O"))
+            key += " !!!!!!! ключ містить символ \"O\"";
+
+        createFailedKeys();
+        return key;
     }
 
     private void setKeyLength() {
@@ -132,24 +157,7 @@ public class Controller {
         if (!Data.path.equals("")) {
             String message = "Шлях до ключів: " + Data.path;
             JOptionPane.showMessageDialog(new JFrame(), message, "Dialog", JOptionPane.INFORMATION_MESSAGE);
-        } else {/*
-            String message = "Вкажіть папку";
-            JOptionPane.showMessageDialog(new JFrame(), message, "Dialog",
-                    JOptionPane.ERROR_MESSAGE);*/
         }
-    }
-
-    @NotNull
-    private String checkForbiddenCharacters(String key) {
-        if (key.contains("1"))
-            key += " !!!!!!! ключ містить символ \"1\"";
-        if (key.contains("O"))
-            key += " !!!!!!! ключ містить символ \"O\"";
-        createFailedKeys();
-        if (key.length() != keyLength)
-            key += "!!!!!!! Невірна довжина ключа! " + key.length() + " замість " + keyLength;
-
-        return key;
     }
 
     private void createFailedKeys() {
@@ -157,7 +165,7 @@ public class Controller {
         if (failedKeysBox.getChildren().size() == 0) {
             failedKeysBox.getChildren().add(failedKeysLabel);
             failedKeysBox.setLayoutX(150);
-            failedKeysBox.setLayoutY(100);
+            failedKeysBox.setLayoutY(50);
             root.getChildren().add(failedKeysBox);
         }
         if (!failedKeysBox.isVisible()) failedKeysBox.setVisible(true);
@@ -168,7 +176,7 @@ public class Controller {
         String JPG_FORMAT = ".jpg";
         int KEY_LENGH = 24;
         int MIN_KEY_LENGH = 17;
-        String FAILED_KEY_TEXT = "Деякі з ключів містять заборонені символи \"1\" та \"O\"";
+        String FAILED_KEY_TEXT = "Деякі з ключів містять заборонені символи \"1\" та \"O\"" + "\nАбо не вырну довжину ключа!";
     }
 
     private ArrayList<String> getListOfKeys(File folder) {
